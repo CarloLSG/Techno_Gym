@@ -4,47 +4,58 @@ import {TreadmillsApiService} from "@/analytics/services/treadmills-api.service"
 export default {
   name: 'HomeComponent',
   data() {
-      return {
-        averageValues: { volts: 0, watts: 0, hp: 0 },
-        treadmillService: null,
-      }
+    return {
+      averageData: {volts: 0, watts: 0, hp: 0},
+      treadmillService: null,
+      healthChecks: []
+    }
   },
   created() {
     this.treadmillService = new TreadmillsApiService();
-    this.treadmillService.getAllHealthChecks()
-        .then(async (healthChecksResponse) => {
-          const healthChecks = healthChecksResponse.data;
-          const treadmillsResponse = await this.treadmillService.getAllTreadmills();
-          const treadmills = treadmillsResponse.data;
-          const validHealthChecks = await
-              Promise.all(healthChecks.filter(async (hc) => {
-                const treadmill = treadmills.find((t) => t.id === hc.treadmill)
-                return treadmill && hc.hp !== 0;
-              }));
-          const voltsSum = validHealthChecks.reduce((acc, hc) => acc + hc.volts, 0);
-          const wattsSum = validHealthChecks.reduce((acc, hc) => acc + hc.watts, 0);
-          const hpSum = validHealthChecks.reduce((acc, hc) => acc + hc.hp, 0);
-          const averageValues = {
-            volts: Math.round((voltsSum / validHealthChecks.length) * 100) / 100,
-            watts: Math.round((wattsSum / validHealthChecks.length) * 100) / 100,
-            hp: Math.round((hpSum / validHealthChecks.length) * 100) / 100,
-          };
-          this.averageValues = averageValues;
-        })
+    this.treadmillService.getAllHealthChecks().then(response => {
+      this.healthChecks = response.data;
+      this.calculateAverage();
+    }).catch(error => {
+      console.log(error);
+    });
+  },
+  methods: {
+    calculateAverage() {
+      let totalVolts = 0.0;
+      let totalWatts = 0.0;
+      let totalHp = 0.0;
+
+      // Not considering hp = 0
+      let totalCount = 0;
+
+      for (const healthCheck of this.healthChecks) {
+        if (healthCheck.hp !== 0) {
+          totalVolts += healthCheck.volts;
+          totalWatts += healthCheck.watts;
+          totalHp += healthCheck.hp;
+          totalCount++;
+        }
+      }
+
+      // Calculate average
+      this.averageData.volts = totalCount !== 0 ? (totalVolts / totalCount).toFixed(2) : 0;
+      this.averageData.watts = totalCount !== 0 ? (totalWatts / totalCount).toFixed(2) : 0;
+      this.averageData.hp = totalCount !== 0 ? (totalHp / totalCount).toFixed(2) : 0;
+    }
   }
 }
 </script>
 
 <template>
-  <div class="card-info">
-    <pv-card v-if="averageValues.hp">
+  <div class="flex justify-content-center mt-6 card-info">
+    <pv-card style="width: 25em" v-if="averageData.hp" class="bg-primary">
       <template #title>
         Average Performance
       </template>
       <template #content>
-        <p>Volts: {{ averageValues.volts }}</p>
-        <p>Watts: {{ averageValues.watts }}</p>
-        <p>HP: {{ averageValues.hp }}</p>
+        <p>Volts: {{ averageData.volts }}</p>
+        <p>Watts: {{ averageData.watts }}</p>
+        <p>HP: {{ averageData.hp }}</p>
       </template>
     </pv-card>
     <div v-else>Loading...</div>
@@ -52,15 +63,5 @@ export default {
 </template>
 
 <style scoped>
-.card-info {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding-top: 5vw;
-}
-.card-info pv-card {
-  width: auto;
-  max-width: 100%;
-  margin: 0 auto;
-}
+
 </style>

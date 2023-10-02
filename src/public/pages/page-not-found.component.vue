@@ -1,6 +1,6 @@
 <script>
 export default {
-    name: 'PageNotFoundComponent'
+  name: 'PageNotFoundComponent'
 }
 </script>
 
@@ -10,6 +10,7 @@ export default {
         <template #title>404 - Not found page :(</template>
         <template #content>
                 <p>The page you are looking for does not exist.</p>
+          <p>Page not found: {{$route.fullPath}}</p>
         </template>
         <template #footer>
             <router-link to="/home">

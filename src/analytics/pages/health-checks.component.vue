@@ -7,10 +7,11 @@ export default {
   data() {
     return {
       healthChecks: [],
+      treadmills: [],
+      centers: [],
       filters: {},
       treadmillService: null,
-      treadmills: [],
-      centers: []
+      //You can create a service per entity
     };
   },
   created() {
@@ -42,34 +43,32 @@ export default {
         console.log(error);
       });
     },
-  },
-  computed: {
-    treadmillChecks() {
-      if (!this.treadmills || !this.centers) {
-        return [];
-      }
-
-      return this.healthChecks.map(hc => {
-        const treadmill = this.treadmills.find(t => t.id === hc.treadmillId);
-        const center = this.centers.find(c => c.id === treadmill.centerId);
-        return {
-          ...hc,
-          serialNumber: treadmill.serialNumber,
-          centerName: center.name,
-          date: `${hc.year}-${hc.month}-${hc.day}`,
-          time: `${hc.hour}:${hc.minutes}:${hc.seconds}`,
-        };
-      });
+    getSerialNumber(record) {
+      const treadmill = this.treadmills.find(treadmill => treadmill.id === record.treadmillId);
+      return treadmill ? treadmill.serialNumber : '-';
+    },
+    getCenterName(record) {
+      // Get treadmill object
+      const treadmill = this.treadmills.find(treadmill => treadmill.id === record.treadmillId);
+      // Get center object
+      const center = treadmill ? this.centers.find(center => center.id === treadmill.centerId) : null;
+      return center ? center.name : '-';
+    },
+    getFormattedDate(record) {
+      return record.year + '-' + record.month + '-' + record.day;
+    },
+    getFormattedTime(record) {
+      return record.hour + ':' + record.minutes + ':' + record.seconds;
     },
   },
 }
 </script>
 
 <template>
-  <div class="record-table">
+  <div>
     <pv-data-table
         ref="dt"
-        :value="treadmillChecks"
+        :value="healthChecks"
         data-key="id"
         :paginator="true"
         :rows="10"
@@ -80,34 +79,41 @@ export default {
         responsiveLayout="scroll"
     >
       <template #header>
-        <div class="table-header flex flex-column md:flex-row md:justify-content-between">
+        <div class="flex flex-column md:flex-row md:justify-content-between">
           <h5 class="mb-2 md:m-0 p-as-md-center text-xl">Treadmills Health Check Information</h5>
           <span class="p-input-icon-left">
             <i class="pi pi-search" />
-            <pv-input-text v-model="filters['global'].value" placeholder="Search" />
+            <pv-input-text v-model="filters['global'].value" placeholder="Search" class="small-text"/>
           </span>
         </div>
       </template>
       <pv-column field="id" header="Record ID" :sortable="true" style="min-width: 8rem"></pv-column>
       <pv-column field="treadmillId" header="Treadmill ID" :sortable="true" style="min-width: 8rem"></pv-column>
-      <pv-column field="serialNumber" header="Serial Number" :sortable="true" style="min-width: 8rem"></pv-column>
-      <pv-column field="centerName" header="Center Name" :sortable="true" style="min-width: 10rem"></pv-column>
-      <pv-column field="date" header="Date" :sortable="true" style="min-width: 8rem"></pv-column>
-      <pv-column field="time" header="Time" :sortable="true" style="min-width: 8rem"></pv-column>
+      <pv-column :field="getSerialNumber" header="Serial Number" :sortable="true" style="min-width: 8rem"></pv-column>
+      <pv-column :field="getCenterName" header="Center Name" :sortable="true" style="min-width: 10rem"></pv-column>
+      <pv-column :field="getFormattedDate" header="Date" :sortable="true" style="min-width: 8rem"></pv-column>
+      <pv-column :field="getFormattedTime" header="Time" :sortable="true" style="min-width: 8rem"></pv-column>
       <pv-column field="volts" header="Volts" :sortable="true" style="min-width: 8rem"></pv-column>
       <pv-column field="watts" header="Watts" :sortable="true" style="min-width: 8rem"></pv-column>
       <pv-column field="hp" header="HP" :sortable="true" style="min-width: 8rem"></pv-column>
+      <template #footer>
+        <div class="flex justify-content-center">
+          <p>In total there are {{ healthChecks ? healthChecks.length : 0 }} health checks.</p>
+        </div>
+      </template>
     </pv-data-table>
   </div>
 </template>
 
 <style scoped>
-.table-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  @media screen and (max-width: 960px) {
-    align-items: start;
+
+.small-text {
+  width: 15rem;
+}
+
+@media screen and (max-width: 960px) {
+  .small-text {
+    width: 10rem;
   }
 }
 </style>

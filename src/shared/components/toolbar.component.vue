@@ -17,7 +17,9 @@ export default {
   <header>
     <pv-toolbar class="bg-primary">
       <template #start>
-        <span><b>TechnoGym TechnoRun Analytics</b></span>
+        <router-link to="/home" class="title bg-primary">
+          <span><b>TechnoGym TechnoRun Analytics</b></span>
+        </router-link>
       </template>
       <template #end>
         <div class="flex-column">
@@ -31,5 +33,8 @@ export default {
 </template>
 
 <style scoped>
-
+.title {
+  text-decoration: none;
+  color: inherit;
+}
 </style>
